@@ -2,521 +2,668 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>AI智能投注 · 今日一键选单</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a84ff">
+<title>竞彩足球 2串1 一键生成</title>
 <style>
-:root {
-  --bg:#f0f2f5; --card:#fff; --red:#c62828; --gold:#e65100; --gold-bg:#fff3e0;
-  --green:#1b5e20; --green-bg:#e8f5e9; --blue:#0d47a1; --blue-bg:#e3f2fd;
-  --text:#222; --sub:#888; --border:#e0e0e0; --radius:10px; --shadow:0 2px 10px rgba(0,0,0,.06);
-  --font:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;padding-bottom:80px}
-.hidden{display:none!important}
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --ink: #1a1d24;
+    --sub: #6b7280;
+    --line: #e6e8ec;
+    --brand: #0a84ff;
+    --brand-ink: #ffffff;
+    --goals: #0a7d33;
+    --half: #b45309;
+    --ok: #0a7d33;
+    --danger: #dc2626;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    padding-bottom: 76px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 12px; }
 
-/* 顶部 */
-.topbar{background:linear-gradient(135deg,#b71c1c,#c62828);color:#fff;padding:16px 16px 20px}
-.topbar h1{font-size:20px;font-weight:700}
-.topbar h1 span{color:#ffcc02}
-.topbar .date{font-size:12px;opacity:.8;margin-top:4px}
-.topbar .badge-row{display:flex;gap:8px;margin-top:10px}
-.topbar .badge{background:rgba(255,255,255,.2);padding:4px 10px;border-radius:12px;font-size:11px}
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: linear-gradient(135deg, #0a84ff, #0060df);
+    color: #fff; padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  }
+  header h1 { margin: 0; font-size: 18px; font-weight: 700; }
+  header p { margin: 4px 0 0; font-size: 12px; opacity: .9; }
 
-/* 加载状态 */
-.loading{text-align:center;padding:60px 20px;color:var(--sub)}
-.loading .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
-@keyframes spin{to{transform:rotate(360deg)}}
+  .toolbar {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px; margin: 12px 0;
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  }
+  .toolbar .field { display: flex; align-items: center; gap: 6px; }
+  .toolbar label { font-size: 13px; color: var(--sub); white-space: nowrap; }
+  .toolbar input, .toolbar select {
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 7px 8px; font-size: 14px; background: #fff; color: var(--ink);
+  }
+  .toolbar input { width: 70px; }
+  .toolbar select { max-width: 130px; }
 
-/* 统计卡片 */
-.stat-cards{display:flex;gap:8px;padding:12px 16px;margin-top:-8px}
-.stat-card{flex:1;background:var(--card);border-radius:var(--radius);padding:12px;text-align:center;box-shadow:var(--shadow)}
-.stat-card .num{font-size:22px;font-weight:700}
-.stat-card .lbl{font-size:10px;color:var(--sub);margin-top:2px}
-.stat-card .num.gold{color:var(--gold)}
-.stat-card .num.green{color:var(--green)}
-.stat-card .num.red{color:var(--red)}
+  .btn {
+    border: none; border-radius: 10px; padding: 10px 14px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    background: var(--brand); color: var(--brand-ink);
+  }
+  .btn:active { opacity: .85; }
+  .btn.secondary { background: #eef1f5; color: var(--ink); }
+  .btn.block { width: 100%; }
 
-/* 空状态 */
-.empty{text-align:center;padding:50px 20px;color:var(--sub)}
-.empty .icon{font-size:48px;margin-bottom:12px}
-.empty h3{font-size:16px;color:var(--text);margin-bottom:8px}
-.empty p{font-size:13px;line-height:1.6}
+  .status {
+    border-radius: 12px; padding: 12px; margin: 12px 0;
+    font-size: 14px; background: #fff; border: 1px solid var(--line);
+  }
+  .status.loading { color: var(--brand); }
+  .status.error { color: var(--danger); background: #fef2f2; border-color: #fecaca; }
+  .status.ok { color: var(--ok); }
+  .status.empty { color: var(--sub); text-align: center; }
 
-/* 赛事卡片 */
-.match-card{background:var(--card);margin:8px 16px;border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);border-left:3px solid var(--gold)}
-.match-card .m-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.match-card .m-league{font-size:11px;padding:2px 8px;border-radius:3px;font-weight:600}
-.m-league.rec{background:var(--gold-bg);color:var(--gold)}
-.m-league.skip{background:#fce4ec;color:#c62828}
-.match-card .m-num{font-size:11px;color:var(--sub)}
-.match-card .m-teams{font-size:15px;font-weight:700;text-align:center;margin:6px 0}
-.match-card .m-teams .vs{color:var(--sub);margin:0 6px;font-weight:400}
-.match-card .m-time{font-size:11px;color:var(--sub);text-align:center}
+  .section-title {
+    font-size: 15px; font-weight: 700; margin: 16px 0 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .section-title .cnt { font-weight: 500; font-size: 12px; color: var(--sub); }
 
-/* 投注项 */
-.bet-section{margin-top:10px;padding-top:8px;border-top:1px dashed var(--border)}
-.bet-section .bs-title{font-size:11px;color:var(--sub);margin-bottom:6px}
-.bet-section .bs-title .roi{font-weight:700}
-.bet-section .bs-title .roi.good{color:var(--green)}
-.bet-section .bs-title .roi.bad{color:var(--red)}
-.bet-options{display:flex;gap:4px;flex-wrap:wrap}
-.bet-opt{background:#fafafa;border:1px solid var(--border);border-radius:16px;padding:5px 12px;font-size:12px;font-weight:600;transition:.15s}
-.bet-opt.rec{background:var(--gold-bg);border-color:var(--gold);color:var(--gold)}
-.bet-opt.rec::before{content:'★ ';font-size:10px}
+  .match-card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px; margin-bottom: 10px;
+  }
+  .match-head { display: flex; align-items: center; gap: 8px; }
+  .match-num { font-weight: 700; font-size: 14px; color: var(--brand); }
+  .match-league {
+    font-size: 12px; color: #fff; background: #334155;
+    border-radius: 6px; padding: 2px 8px;
+  }
+  .match-time { margin-left: auto; font-size: 12px; color: var(--sub); }
+  .match-teams { font-size: 15px; font-weight: 600; margin: 8px 0 2px; }
+  .match-date { font-size: 12px; color: var(--sub); }
 
-/* 底部操作栏 */
-.bottom{position:fixed;bottom:0;left:0;right:0;background:var(--card);padding:12px 16px;box-shadow:0 -2px 10px rgba(0,0,0,.08);z-index:100;display:flex;align-items:center;gap:10px}
-.bottom .total{font-size:13px;color:var(--sub)}
-.bottom .total strong{font-size:18px;color:var(--red)}
-.bottom button{flex:1;padding:12px;border:none;border-radius:24px;font-size:15px;font-weight:700;cursor:pointer;transition:.2s}
-.bottom .btn-refresh{flex:0;background:var(--bg);color:var(--text);padding:12px 16px;border-radius:24px;font-size:18px}
-.bottom .btn-submit{background:var(--red);color:#fff;flex:2}
-.bottom .btn-submit:active{background:#b71c1c}
+  .play-group { margin-top: 10px; }
+  .play-label { font-size: 13px; color: var(--sub); margin-bottom: 6px; }
+  .play-label.goals { color: var(--goals); font-weight: 600; }
+  .play-label.half { color: var(--half); font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    border: 1px solid var(--line); background: #fff; color: var(--ink);
+    border-radius: 999px; padding: 5px 10px; font-size: 13px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .chip em { font-style: normal; color: var(--sub); font-size: 12px; }
+  .chip.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .chip.on em { color: rgba(255,255,255,.85); }
 
-/* 弹窗 */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center}
-.modal-inner{background:var(--card);width:100%;max-width:500px;border-radius:16px 16px 0 0;padding:20px;max-height:80vh;overflow-y:auto}
-.modal-inner h3{font-size:17px;text-align:center;margin-bottom:16px}
-.ticket{border:2px dashed var(--border);border-radius:8px;padding:14px;margin-bottom:12px}
-.ticket .t-title{text-align:center;font-weight:700;font-size:15px;margin-bottom:10px}
-.ticket .t-item{font-size:12px;padding:5px 0;border-bottom:1px dotted var(--border);display:flex;justify-content:space-between}
-.ticket .t-item .opts{color:var(--green);font-weight:600}
-.ticket .t-total{text-align:right;font-weight:700;font-size:16px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
-.modal .btn-row{display:flex;gap:8px}
-.modal .btn-row button{flex:1;padding:10px;border:none;border-radius:20px;font-size:14px;font-weight:600;cursor:pointer}
-.modal .btn-close{background:var(--bg);color:var(--text)}
-.modal .btn-print{background:var(--red);color:#fff}
+  .empty-mini { color: var(--sub); font-size: 13px; }
 
-/* Toast */
-.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 24px;border-radius:20px;font-size:13px;z-index:300;animation:fadeIn .3s}
-@keyframes fadeIn{from{opacity:0;transform:translateX(-50%)translateY(-10px)}to{opacity:1;transform:translateX(-50%)translateY(0)}}
+  .combo-card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px; margin-bottom: 10px;
+  }
+  .combo-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .badge { font-size: 12px; font-weight: 600; border-radius: 6px; padding: 3px 8px; color: #fff; }
+  .badge.t1 { background: var(--goals); }
+  .badge.t2 { background: #7c3aed; }
+  .badge.t3 { background: #db2777; }
+  .badge.t4 { background: var(--half); }
+  .badge.profit { background: var(--ok); }
+  .combo-idx { font-weight: 700; color: var(--sub); font-size: 13px; }
+  .leg { border-left: 3px solid var(--line); padding: 4px 0 4px 10px; margin: 6px 0; }
+  .leg.goals { border-left-color: var(--goals); }
+  .leg.half { border-left-color: var(--half); }
+  .leg .t { font-weight: 600; font-size: 14px; }
+  .leg .p { font-size: 13px; color: var(--sub); margin-top: 2px; }
+  .leg .p b { color: var(--ink); font-weight: 600; }
+  .combo-metrics {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;
+    margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line);
+    font-size: 13px; color: var(--sub);
+  }
+  .combo-metrics b { color: var(--ink); font-weight: 700; }
 
-/* 联赛映射 */
-.league-tag{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;margin-right:4px}
+  .floating {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    background: #fff; border-top: 1px solid var(--line);
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    display: flex; gap: 10px;
+  }
+  .floating .btn { flex: 1; }
+
+  .note { font-size: 12px; color: var(--sub); margin: 12px 0; }
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
+<header>
+  <h1>竞彩足球 · 2串1 一键生成</h1>
+  <p>同步体彩官方赛事与赔率 · 自动套用预设方案 · 手机出票助手</p>
+</header>
 
-<div class="topbar">
-  <h1>⚽ AI<span>智能投注</span></h1>
-  <div class="date" id="todayDate">加载中...</div>
-  <div class="badge-row">
-    <span class="badge">📊 8联赛AI模型</span>
-    <span class="badge">🎯 历史ROI筛选</span>
-    <span class="badge" id="apiBadge">🔄 实时数据</span>
+<div class="wrap">
+  <div class="toolbar">
+    <div class="field">
+      <label for="threshold">筛选值≥</label>
+      <input id="threshold" type="number" min="0" max="200" step="1" value="20">
+      <label for="threshold">%</label>
+    </div>
+    <button class="btn" id="btnGen">生成方案</button>
+    <button class="btn secondary" id="btnRefresh">刷新数据</button>
   </div>
+
+  <div id="status" class="status loading">正在同步体彩数据…</div>
+
+  <div class="section-title">当日赛事 <span class="cnt" id="matchCnt"></span></div>
+  <div id="matches"></div>
+
+  <div class="section-title">生成结果 <span class="cnt" id="resultCnt"></span></div>
+  <div id="results"></div>
+
+  <p class="note">说明：长期赔率乘积 = 两场“长期赔率”（历史文档预设场均赔率）相乘；总投入 = 总注数 × 2元。仅展示当日赛事（今日11:00至次日11:00开赛）。仅用于投注方案整理，不构成任何购彩建议。</p>
 </div>
 
-<div id="loadingView" class="loading">
-  <div class="spinner"></div>
-  <div>正在获取今日赛事数据...</div>
-  <div style="font-size:11px;color:#aaa;margin-top:6px">来源：中国体彩官方API</div>
+<div class="floating hidden" id="floatBar">
+  <button class="btn" id="btnCopy">复制文字注单</button>
+  <button class="btn secondary" id="btnScrollTop">回顶部</button>
 </div>
-
-<div id="errorView" class="empty hidden">
-  <div class="icon">📡</div>
-  <h3>数据获取失败</h3>
-  <p>无法连接体彩官方API<br>请检查网络后刷新重试</p>
-  <button onclick="location.reload()" style="margin-top:16px;padding:10px 30px;background:var(--red);color:#fff;border:none;border-radius:20px;font-size:14px;font-weight:600;">刷新重试</button>
-</div>
-
-<div id="mainView" class="hidden">
-  <div class="stat-cards" id="statCards"></div>
-  <div class="empty hidden" id="emptyView">
-    <div class="icon">🎯</div>
-    <h3>今日无最佳投注赔率</h3>
-    <p>今日开出的赛事中，无可匹配AI策略的联赛<br>（仅有 日职/韩职K2/英冠/荷乙 等未覆盖联赛）<br><br>建议：<strong>今日不投注</strong>，等待高ROI联赛出现</p>
-  </div>
-  <div id="matchList"></div>
-</div>
-
-<div class="bottom hidden" id="bottomBar">
-  <button class="btn-refresh" onclick="location.reload()" title="刷新">🔄</button>
-  <div class="total">今日投注 <strong id="totalCost">¥0</strong></div>
-  <button class="btn-submit" onclick="showTicket()">📋 查看投注方案</button>
-</div>
-
-<div class="modal hidden" id="ticketModal">
-  <div class="modal-inner" id="ticketContent"></div>
-</div>
-<div class="modal hidden" id="parlayModal">
-  <div class="modal-inner" id="parlayContent"></div>
-</div>
-<div id="toast" class="toast hidden"></div>
 
 <script>
-// ========== 8联赛AI策略引擎 ==========
-const LEAGUE_MAP = {
-  '瑞超': { alias:'瑞典超级联赛', goal:{combo:['0','2','3'],roi:36.8,cost:6}, half:{combo:['胜胜','平平','平负'],roi:-2.1,cost:6} },
-  '美职': { alias:'美国职业大联盟', goal:{combo:['0','2'],roi:72.2,cost:4}, half:{combo:['平胜','平平','负平'],roi:63.9,cost:6} },
-  '巴甲': { alias:'巴西甲级联赛', goal:{combo:['0','2'],roi:48.6,cost:4}, half:{combo:['胜胜','胜平','平平'],roi:50.9,cost:6} },
-  '挪超': { alias:'挪威超级联赛', goal:{combo:['1','3'],roi:18.3,cost:4}, half:{combo:['胜胜','平负','负负'],roi:-8.2,cost:6} },
-  '芬超': { alias:'芬兰超级联赛', goal:{combo:['1','3'],roi:18.3,cost:4}, half:{combo:['胜胜','平胜','负负'],roi:19.2,cost:6} },
-  '欧罗巴': { alias:'欧罗巴联赛', goal:{combo:['2','3'],roi:8.0,cost:4}, half:{combo:['胜胜','负胜','平负'],roi:68.8,cost:6} },
-  '欧冠': { alias:'欧洲冠军联赛', goal:{combo:['2','3'],roi:5.8,cost:4}, half:{combo:['胜胜','平胜','平负'],roi:-7.1,cost:6} },
-  '韩职': { alias:'韩国职业联赛', goal:{combo:['0','2','4'],roi:5.4,cost:6}, half:{combo:['平平','平负','负负'],roi:16.2,cost:6} },
-};
-const GOAL_MIN_ROI = 15;
-const HALF_MIN_ROI = 0;
-const HALF_MAP = { hh:'胜胜',hd:'胜平',ha:'胜负',dh:'平胜',dd:'平平',da:'平负',ah:'负胜',ad:'负平',aa:'负负' };
-const GOAL_KEYS = ['s0','s1','s2','s3','s4','s5','s6','s7'];
-const GOAL_LABELS = ['0球','1球','2球','3球','4球','5球','6球','7+球'];
+(function () {
+  "use strict";
 
-// ========== 数据获取 ==========
-async function fetchMatches() {
-  try {
-    let allMatches = [];
-    // 获取混合过关数据（包含hafu）
-    const r1 = await fetch('https://webapi.sporttery.cn/gateway/uniform/football/getMatchCalculatorV1.qry?channel=c&poolCode=hafu');
-    const d1 = await r1.json();
-    if (!d1.success || !d1.value || !d1.value.matchInfoList) throw new Error('API异常');
-    
-    // 获取总进球数数据
-    const r2 = await fetch('https://webapi.sporttery.cn/gateway/uniform/football/getMatchCalculatorV1.qry?channel=c&poolCode=ttg');
-    const d2 = await r2.json();
-    
-    // 合并数据
-    const ttgMap = {};
-    if (d2.success && d2.value && d2.value.matchInfoList) {
-      d2.value.matchInfoList.forEach(day => {
-        (day.subMatchList || []).forEach(m => { ttgMap[m.matchId] = m.ttg; });
-      });
+  // ---------- 玩法定义 ----------
+  var GOAL_KEYS = ["s0","s1","s2","s3","s4","s5","s6","s7"];
+  var GOAL_LABELS = ["0球","1球","2球","3球","4球","5球","6球","7+球"];
+  var HALF_KEYS = ["hh","hd","ha","dh","dd","da","ah","ad","aa"];
+  var HALF_LABELS = ["胜胜","胜平","胜负","平胜","平平","平负","负胜","负平","负负"];
+
+  // ---------- 文档预设选择项（联赛短名 → 选项） ----------
+  // ====AUTO:PRESET:START====
+  var PRESET = {
+    "挪超":   { goals: [],                    half: ["胜胜","负负"] },
+    "芬超":   { goals: [],                    half: ["胜胜","平胜","负负"] },
+    "瑞超":   { goals: ["0球","2球","3球","4球"], half: ["胜胜","平平","平负","负负"] },
+    "葡超":   { goals: ["1球","2球","4球"],      half: [] },
+    "西甲":   { goals: ["2球","3球","4球"],      half: ["平胜","胜平","平平"] },
+    "荷甲":   { goals: ["3球","4球","5球"],      half: ["胜胜","平胜","负负"] },
+    "荷乙":   { goals: ["1球","3球","4球","5球"], half: ["胜胜","平胜","负平","胜负"] },
+    "法乙":   { goals: ["1球","2球","4球","6球"], half: ["胜胜","平平","平负","负负"] },
+    "英联赛杯": { goals: ["1球","2球","4球"],      half: ["胜胜","平胜","平平","负负"] },
+    "英社区盾": { goals: ["3球"],                half: ["胜胜"] },
+    "德乙":   { goals: [],                    half: ["胜胜","平平","负平","负负"] },
+    "欧冠":   { goals: [],                    half: ["胜胜","平胜","平平","平负","负负"] },
+    "欧罗巴":  { goals: ["2球","3球","5球"],      half: ["胜胜","平胜","胜平","平负"] },
+    "英冠":   { goals: ["0球","2球","3球","4球"], half: ["胜胜","平平","负平","平负"] },
+    "巴甲":   { goals: ["0球","2球"],           half: ["胜胜","胜平","平平"] },
+    "巴西杯":  { goals: ["2球","4球"],           half: ["胜胜","胜平","平平"] },
+    "解放者杯": { goals: ["1球","2球","3球"],      half: ["胜胜","平胜","胜平","平平","平负"] },
+    "美职":   { goals: ["0球","2球","5球"],      half: ["平胜","平平","负平"] },
+    "韩职":   { goals: ["0球","3球","4球","5球"], half: ["胜胜","平平","负负"] },
+    "日职":   { goals: ["3球","4球","5球"],      half: ["胜胜","平平","胜负"] },
+    "日乙":   { goals: ["0球","1球","2球","4球"], half: ["胜胜","负负","平平"] },
+    "亚冠精英": { goals: ["0球","1球","2球","3球"], half: ["胜胜","平胜","负胜","平平","负负"] },
+    "沙职":   { goals: [],                    half: ["胜胜","胜平","平胜","平负"] },
+  };
+  // ====AUTO:PRESET:END====
+
+  // ---------- 文档长期赔率（联赛短名 → 各玩法历史场均赔率） ----------
+  // ====AUTO:LONG_ODDS:START====
+  var LONG_ODDS = {
+    "挪超":   { goals: 0.00, half: 3.25 },
+    "芬超":   { goals: 0.00, half: 4.22 },
+    "瑞超":   { goals: 3.91, half: 4.66 },
+    "葡超":   { goals: 3.89, half: 0.00 },
+    "西甲":   { goals: 4.00, half: 5.55 },
+    "荷甲":   { goals: 5.04, half: 4.16 },
+    "荷乙":   { goals: 4.18, half: 4.28 },
+    "法乙":   { goals: 4.16, half: 3.88 },
+    "英联赛杯": { goals: 4.74, half: 3.59 },
+    "英社区盾": { goals: 3.90, half: 4.60 },
+    "德乙":   { goals: 0.00, half: 4.41 },
+    "欧冠":   { goals: 0.00, half: 4.63 },
+    "欧罗巴":  { goals: 3.76, half: 4.61 },
+    "英冠":   { goals: 4.35, half: 5.00 },
+    "巴甲":   { goals: 3.31, half: 3.62 },
+    "巴西杯":  { goals: 3.18, half: 4.01 },
+    "解放者杯": { goals: 3.44, half: 6.71 },
+    "美职":   { goals: 4.04, half: 5.22 },
+    "韩职":   { goals: 4.13, half: 4.99 },
+    "日职":   { goals: 3.66, half: 4.22 },
+    "日乙":   { goals: 4.08, half: 3.93 },
+    "亚冠精英": { goals: 3.12, half: 6.70 },
+    "沙职":   { goals: 0.00, half: 3.47 },
+  };
+  // ====AUTO:LONG_ODDS:END====
+
+  var API_URL = "https://webapi.sporttery.cn/gateway/jc/football/getMatchCalculatorV1.qry?poolCode=ttg,hafu&channel=c";
+
+  var MATCHES = [];
+  var LAST_UPDATE = "";
+  var LAST_COMBOS = [];
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function parseOdds(v) {
+    if (v === undefined || v === null || v === "") return null;
+    var f = parseFloat(v);
+    return (isFinite(f) && f > 0) ? f : null;
+  }
+
+  function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+
+  function beijingNow() {
+    var d = new Date();
+    return new Date(d.getTime() + d.getTimezoneOffset() * 60000 + 8 * 3600000);
+  }
+
+  function beijingDateStr(d) {
+    return d.getUTCFullYear() + "-" + pad2(d.getUTCMonth() + 1) + "-" + pad2(d.getUTCDate());
+  }
+
+  function buildOptions(pool, keys, labels) {
+    if (!pool) return [];
+    var out = [];
+    for (var i = 0; i < keys.length; i++) {
+      var odds = parseOdds(pool[keys[i]]);
+      if (odds !== null) {
+        out.push({ key: keys[i], label: labels[i], odds: odds, checked: false });
+      }
     }
-    
-    let today = '';
-    d1.value.matchInfoList.forEach(day => {
-      if (!today) today = day.businessDate;
-      (day.subMatchList || []).forEach(m => {
-        if (m.matchStatus !== 'Selling') return;
-        allMatches.push({
-          id: m.matchId,
-          date: m.matchDate || day.businessDate,
-          time: (m.matchTime || '').substring(0,5),
-          num: m.matchNumStr || '',
-          league: m.leagueAbbName || '',
-          leagueFull: m.leagueAllName || '',
-          home: m.homeTeamAllName || '',
-          away: m.awayTeamAllName || '',
-          had: m.had || {},
-          hafu: m.hafu || {},
-          ttg: ttgMap[m.matchId] || m.ttg || {},
+    return out;
+  }
+
+  function teamName(short, full) {
+    return full || short || "";
+  }
+
+  function setStatus(cls, msg) {
+    var el = $("status");
+    el.className = "status " + cls;
+    el.textContent = msg;
+  }
+
+  function loadData() {
+    setStatus("loading", "正在同步体彩数据…");
+    fetch(API_URL, { cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data || data.success !== true) {
+          throw new Error((data && data.errorMessage) || "接口返回异常");
+        }
+        parseData(data);
+      })
+      .catch(function (err) {
+        setStatus("error", "数据同步失败：" + err.message + "（可点击“刷新数据”重试）");
+        $("matches").innerHTML = "";
+        $("results").innerHTML = "";
+        $("matchCnt").textContent = "";
+        $("resultCnt").textContent = "";
+      });
+  }
+
+  function parseData(data) {
+    var value = data.value || {};
+    var list = [];
+    var infoList = value.matchInfoList || [];
+    var bjNow = beijingNow();
+    var todayStr = beijingDateStr(bjNow);
+    var tomorrowStr = beijingDateStr(new Date(bjNow.getTime() + 24 * 3600000));
+    var windowStart = new Date(todayStr + "T11:00:00+08:00").getTime();
+    var windowEnd = new Date(tomorrowStr + "T11:00:00+08:00").getTime();
+    for (var i = 0; i < infoList.length; i++) {
+      var subs = infoList[i].subMatchList || [];
+      for (var j = 0; j < subs.length; j++) {
+        var sm = subs[j];
+        if (sm.matchStatus !== "Selling") continue;
+        var kick = new Date((sm.matchDate || "") + "T" + (sm.matchTime || "") + "+08:00").getTime();
+        if (!isFinite(kick) || kick < windowStart || kick >= windowEnd) continue;
+        var goals = buildOptions(sm.ttg, GOAL_KEYS, GOAL_LABELS);
+        var half = buildOptions(sm.hafu, HALF_KEYS, HALF_LABELS);
+        if (goals.length === 0 && half.length === 0) continue;
+        list.push({
+          matchId: sm.matchId,
+          matchNumStr: sm.matchNumStr || "",
+          leagueAbbName: sm.leagueAbbName || "",
+          leagueAllName: sm.leagueAllName || "",
+          home: teamName(sm.homeTeamAbbName, sm.homeTeamAllName),
+          away: teamName(sm.awayTeamAbbName, sm.awayTeamAllName),
+          matchTime: sm.matchTime || "",
+          matchDate: sm.matchDate || "",
+          matchWeek: sm.matchWeek || "",
+          goalsOptions: goals,
+          halfOptions: half
         });
-      });
+      }
+    }
+    MATCHES = list;
+    LAST_UPDATE = value.lastUpdateTime || "";
+    applyPresets();
+    renderMatches();
+    generate();
+    setStatus("ok", "数据已同步" + (LAST_UPDATE ? "（更新时间 " + LAST_UPDATE + "）" : "") + "，共 " + MATCHES.length + " 场当日可投注赛事。");
+  }
+
+  function applyPresets() {
+    for (var i = 0; i < MATCHES.length; i++) {
+      var m = MATCHES[i];
+      var p = PRESET[m.leagueAbbName];
+      if (!p) continue;
+      for (var a = 0; a < p.goals.length; a++) {
+        var g = m.goalsOptions.filter(function (o) { return o.label === p.goals[a]; })[0];
+        if (g) g.checked = true;
+      }
+      for (var b = 0; b < p.half.length; b++) {
+        var h = m.halfOptions.filter(function (o) { return o.label === p.half[b]; })[0];
+        if (h) h.checked = true;
+      }
+    }
+  }
+
+  function renderMatches() {
+    var wrap = $("matches");
+    $("matchCnt").textContent = MATCHES.length ? "共 " + MATCHES.length + " 场当日赛事" : "";
+    if (!MATCHES.length) {
+      wrap.innerHTML = '<div class="status empty">当日暂无可投注赛事（今日11:00至次日11:00）</div>';
+      return;
+    }
+    var html = "";
+    for (var i = 0; i < MATCHES.length; i++) {
+      var m = MATCHES[i];
+      html += '<div class="match-card">';
+      html += '  <div class="match-head">';
+      html += '    <span class="match-num">' + esc(m.matchNumStr) + '</span>';
+      html += '    <span class="match-league">' + esc(m.leagueAbbName || m.leagueAllName) + '</span>';
+      html += '    <span class="match-time">' + esc(m.matchWeek + " " + m.matchTime) + '</span>';
+      html += '  </div>';
+      html += '  <div class="match-teams">' + esc(m.home) + ' vs ' + esc(m.away) + '</div>';
+      html += '  <div class="match-date">' + esc(m.matchDate) + '</div>';
+
+      html += '  <div class="play-group">';
+      html += '    <div class="play-label goals">进球数（总进球）</div>';
+      if (m.goalsOptions.length) {
+        html += '    <div class="chips">' + renderChips(i, "goals", m.goalsOptions) + '</div>';
+      } else {
+        html += '    <div class="empty-mini">暂无此玩法</div>';
+      }
+      html += '  </div>';
+
+      html += '  <div class="play-group">';
+      html += '    <div class="play-label half">半全场</div>';
+      if (m.halfOptions.length) {
+        html += '    <div class="chips">' + renderChips(i, "half", m.halfOptions) + '</div>';
+      } else {
+        html += '    <div class="empty-mini">暂无此玩法</div>';
+      }
+      html += '  </div>';
+
+      html += '</div>';
+    }
+    wrap.innerHTML = html;
+  }
+
+  function renderChips(mi, play, options) {
+    var s = "";
+    for (var k = 0; k < options.length; k++) {
+      var o = options[k];
+      s += '<button type="button" class="chip' + (o.checked ? ' on' : '') + '" data-mi="' + mi + '" data-play="' + play + '" data-key="' + o.key + '">'
+        + esc(o.label) + ' <em>' + o.odds.toFixed(2) + '</em></button>';
+    }
+    return s;
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  // 事件委托：点击选项 chip 切换勾选
+  $("matches").addEventListener("click", function (e) {
+    var chip = e.target.closest ? e.target.closest(".chip") : null;
+    if (!chip) return;
+    var mi = parseInt(chip.getAttribute("data-mi"), 10);
+    var play = chip.getAttribute("data-play");
+    var key = chip.getAttribute("data-key");
+    var m = MATCHES[mi];
+    if (!m) return;
+    var arr = play === "goals" ? m.goalsOptions : m.halfOptions;
+    for (var i = 0; i < arr.length; i++) {
+      if (arr[i].key === key) {
+        arr[i].checked = !arr[i].checked;
+        chip.classList.toggle("on", arr[i].checked);
+        break;
+      }
+    }
+  });
+
+  function playName(play) {
+    return play === "goals" ? "进球数（总进球）" : "半全场";
+  }
+
+  function typeOf(a, b) {
+    if (a.play === "goals" && b.play === "goals") return { key: "t1", name: "进球数 × 进球数" };
+    if (a.play === "goals" && b.play === "half") return { key: "t2", name: "进球数 × 半全场" };
+    if (a.play === "half" && b.play === "goals") return { key: "t3", name: "半全场 × 进球数" };
+    return { key: "t4", name: "半全场 × 半全场" };
+  }
+
+  function makeLeg(m, play, opts) {
+    var sum = 0, min = Infinity, max = -Infinity;
+    for (var i = 0; i < opts.length; i++) {
+      sum += opts[i].odds;
+      if (opts[i].odds < min) min = opts[i].odds;
+      if (opts[i].odds > max) max = opts[i].odds;
+    }
+    var avg = sum / opts.length;
+    var longOdds = avg;
+    var lo = LONG_ODDS[m.leagueAbbName];
+    if (lo) {
+      var v = play === "goals" ? lo.goals : lo.half;
+      if (v > 0) longOdds = v;
+    }
+    return {
+      matchId: m.matchId,
+      matchNumStr: m.matchNumStr,
+      home: m.home,
+      away: m.away,
+      league: m.leagueAbbName || m.leagueAllName,
+      play: play,
+      opts: opts,
+      avg: avg,
+      longOdds: longOdds,
+      count: opts.length,
+      min: min,
+      max: max
+    };
+  }
+
+  function generate() {
+    var threshold = getThreshold();
+    var legs = [];
+    for (var i = 0; i < MATCHES.length; i++) {
+      var m = MATCHES[i];
+      var gs = m.goalsOptions.filter(function (o) { return o.checked; });
+      var hs = m.halfOptions.filter(function (o) { return o.checked; });
+      if (gs.length) legs.push(makeLeg(m, "goals", gs));
+      if (hs.length) legs.push(makeLeg(m, "half", hs));
+    }
+
+    var combos = [];
+    for (var a = 0; a < legs.length; a++) {
+      for (var b = a + 1; b < legs.length; b++) {
+        if (legs[a].matchId === legs[b].matchId) continue; // 同一场比赛不能组成2串1
+        var A = legs[a], B = legs[b];
+        var product = A.longOdds * B.longOdds;
+        var bets = A.count * B.count;
+        var invest = bets * 2;
+        var prize = 2 * product;
+        var profit = prize / invest - 1;
+        var minPrize = 2 * A.min * B.min;
+        var maxPrize = 2 * A.max * B.max;
+        var type = typeOf(A, B);
+        combos.push({
+          a: A, b: B,
+          type: type,
+          product: product,
+          bets: bets,
+          invest: invest,
+          prize: prize,
+          profit: profit,
+          minPrize: minPrize,
+          maxPrize: maxPrize
+        });
+      }
+    }
+
+    var filtered = combos.filter(function (c) { return c.profit >= threshold; });
+    filtered.sort(function (x, y) {
+      if (y.product !== x.product) return y.product - x.product;
+      return y.profit - x.profit;
     });
-    
-    return { today, matches: allMatches };
-  } catch(e) {
-    console.error('获取数据失败:', e);
-    return null;
-  }
-}
 
-// ========== 联赛匹配 ==========
-function findStrategy(leagueName, leagueFull) {
-  // 精确匹配简称
-  if (LEAGUE_MAP[leagueName]) return { name: leagueName, ...LEAGUE_MAP[leagueName] };
-  // 全称匹配
-  for (const [key, val] of Object.entries(LEAGUE_MAP)) {
-    if (val.alias === leagueFull) return { name: key, ...val };
-    if (leagueFull && leagueFull.includes(key)) return { name: key, ...val };
-    if (leagueName && key.includes(leagueName)) return { name: key, ...val };
+    LAST_COMBOS = filtered;
+    renderResults(filtered, combos.length, threshold);
   }
-  return null;
-}
 
-// ========== 渲染 ==========
-function render(data) {
-  const { today, matches } = data;
-  document.getElementById('loadingView').classList.add('hidden');
-  document.getElementById('mainView').classList.remove('hidden');
-  document.getElementById('bottomBar').classList.remove('hidden');
-  document.getElementById('todayDate').textContent = `📅 ${today} · 今日赛事`;
-  document.getElementById('apiBadge').textContent = `✅ ${matches.length}场可售`;
-  
-  // 筛选
-  const qualified = [];
-  matches.forEach(m => {
-    const strat = findStrategy(m.league, m.leagueFull);
-    if (!strat) return;
-    
-    const goalOK = strat.goal.roi >= GOAL_MIN_ROI;
-    const halfOK = strat.half.roi >= HALF_MIN_ROI;
-    if (!goalOK && !halfOK) return;
-    
-    qualified.push({ ...m, strategy: strat, goalOK, halfOK });
-  });
-  
-  // 统计
-  let goalCount = 0, halfCount = 0, totalCost = 0;
-  qualified.forEach(m => {
-    if (m.goalOK) { goalCount++; totalCost += m.strategy.goal.cost; }
-    if (m.halfOK) { halfCount++; totalCost += m.strategy.half.cost; }
-  });
-  
-  document.getElementById('statCards').innerHTML = `
-    <div class="stat-card"><div class="num gold">${qualified.length}</div><div class="lbl">可投赛事</div></div>
-    <div class="stat-card"><div class="num green">${goalCount}</div><div class="lbl">总进球推荐</div></div>
-    <div class="stat-card"><div class="num green">${halfCount}</div><div class="lbl">半全场推荐</div></div>
-    <div class="stat-card"><div class="num red">¥${totalCost}</div><div class="lbl">合计投注</div></div>`;
-  
-  document.getElementById('totalCost').textContent = `¥${totalCost}`;
-  
-  // 空状态
-  if (qualified.length === 0) {
-    document.getElementById('emptyView').classList.remove('hidden');
-    document.getElementById('matchList').innerHTML = '';
-    document.getElementById('bottomBar').classList.add('hidden');
-    return;
+  function getThreshold() {
+    var v = parseFloat($("threshold").value);
+    if (!isFinite(v)) v = 20;
+    if (v < 0) v = 0;
+    return v / 100;
   }
-  document.getElementById('emptyView').classList.add('hidden');
-  
-  // 渲染赛事列表
-  let html = '';
-  qualified.forEach(m => {
-    const s = m.strategy;
-    html += `<div class="match-card">
-      <div class="m-header">
-        <span class="m-league rec">${m.league}</span>
-        <span class="m-num">${m.num} · ${m.time}</span>
-      </div>
-      <div class="m-teams">${m.home} <span class="vs">VS</span> ${m.away}</div>`;
-    
-    if (m.goalOK) {
-      html += `<div class="bet-section">
-        <div class="bs-title">🎯 总进球数 <span class="roi good">(ROI +${s.goal.roi}%)</span> → ${s.goal.cost}元</div>
-        <div class="bet-options">`;
-      s.goal.combo.forEach(opt => {
-        const idx = parseInt(opt);
-        const key = GOAL_KEYS[idx];
-        const odds = m.ttg && m.ttg[key] ? m.ttg[key] : '?';
-        html += `<span class="bet-opt rec">${GOAL_LABELS[idx]} @${odds}</span>`;
-      });
-      html += `</div></div>`;
-    }
-    
-    if (m.halfOK) {
-      html += `<div class="bet-section">
-        <div class="bs-title">🎯 半全场 <span class="roi ${s.half.roi>=0?'good':'bad'}">(ROI ${s.half.roi>=0?'+':''}${s.half.roi}%)</span> → ${s.half.cost}元</div>
-        <div class="bet-options">`;
-      s.half.combo.forEach(opt => {
-        const key = Object.keys(HALF_MAP).find(k => HALF_MAP[k] === opt);
-        const odds = m.hafu && m.hafu[key] ? m.hafu[key] : '?';
-        html += `<span class="bet-opt rec">${opt} @${odds}</span>`;
-      });
-      html += `</div></div>`;
-    }
-    
-    html += `</div>`;
-  });
-  
-  document.getElementById('matchList').innerHTML = html;
-  
-  // 存储数据供后续使用
-  window._qualifiedMatches = qualified;
-}
 
-// ========== 投注方案 ==========
-function showTicket() {
-  const matches = window._qualifiedMatches || [];
-  if (!matches.length) return;
-  
-  let totalCost = 0;
-  let html = `<h3>🧾 今日AI投注方案</h3>
-    <p style="font-size:12px;color:var(--sub);text-align:center;margin-bottom:12px;">
-    ${matches[0].date} · 单关投注 · 直接发给体彩店出票</p>
-    <div class="ticket">
-      <div class="t-title">中国体育彩票 · AI智能推荐</div>`;
-  
-  // 按玩法分组
-  let goalItems = [], halfItems = [];
-  matches.forEach(m => {
-    const s = m.strategy;
-    if (m.goalOK) {
-      let cost = s.goal.cost;
-      totalCost += cost;
-      const opts = s.goal.combo.map((o,i) => {
-        const idx = parseInt(o);
-        const odd = m.ttg && m.ttg[GOAL_KEYS[idx]] ? m.ttg[GOAL_KEYS[idx]] : '?';
-        return `${GOAL_LABELS[idx]}@${odd}`;
-      }).join(' / ');
-      goalItems.push({ m, opts, cost });
+  function renderResults(combos, total, threshold) {
+    var wrap = $("results");
+    var pct = Math.round(threshold * 100);
+    if (!combos.length) {
+      $("resultCnt").textContent = "";
+      wrap.innerHTML = '<div class="status empty">当日无可投注方案（无组合满足筛选值 ≥ ' + pct + '%）</div>';
+      $("floatBar").classList.add("hidden");
+      return;
     }
-    if (m.halfOK) {
-      let cost = s.half.cost;
-      totalCost += cost;
-      const opts = s.half.combo.map(o => {
-        const key = Object.keys(HALF_MAP).find(k => HALF_MAP[k]===o);
-        const odd = m.hafu && m.hafu[key] ? m.hafu[key] : '?';
-        return `${o}@${odd}`;
-      }).join(' / ');
-      halfItems.push({ m, opts, cost });
+    $("resultCnt").textContent = "共 " + combos.length + " 个方案（已按筛选值 ≥ " + pct + "% 筛选）";
+    var html = "";
+    for (var i = 0; i < combos.length; i++) {
+      html += renderCombo(i + 1, combos[i]);
     }
-  });
-  
-  goalItems.forEach(item => {
-    html += `<div class="t-item">
-      <span>${item.m.league} ${item.m.home}vs${item.m.away} [总进球]</span>
-      <span class="opts">${item.opts}</span>
-      <span>¥${item.cost}</span></div>`;
-  });
-  halfItems.forEach(item => {
-    html += `<div class="t-item">
-      <span>${item.m.league} ${item.m.home}vs${item.m.away} [半全场]</span>
-      <span class="opts">${item.opts}</span>
-      <span>¥${item.cost}</span></div>`;
-  });
-  
-  html += `<div class="t-total">合计: <strong>¥${totalCost}</strong></div>
-    <p style="font-size:10px;color:var(--sub);margin-top:8px;line-height:1.5">
-    ⚠️ 基于8联赛215场历史数据AI分析<br>投资有风险，请理性投注</p></div>`;
-  
-  // 过关选项
-  if (matches.length >= 2) {
-    html += `<div style="margin-top:12px">
-      <p style="font-size:13px;font-weight:600;margin-bottom:8px;">🔗 过关投注（可选）</p>`;
-    if (matches.length >= 2) {
-      let parlayCost = 0;
-      matches.forEach(m => { if(m.goalOK) parlayCost += m.strategy.goal.combo.length; });
-      html += `<button onclick="showParlay(2)" style="margin:4px;padding:8px 16px;border:1px solid var(--red);border-radius:16px;background:#fff;color:var(--red);font-size:13px;font-weight:600;">2串1 · ${matches.length>=2?'可用':'不可用'}</button>`;
-    }
-    if (matches.length >= 3) {
-      html += `<button onclick="showParlay(3)" style="margin:4px;padding:8px 16px;border:1px solid var(--red);border-radius:16px;background:#fff;color:var(--red);font-size:13px;font-weight:600;">3串1 · 可用</button>`;
-    }
-    html += `</div>`;
+    wrap.innerHTML = html;
+    $("floatBar").classList.remove("hidden");
   }
-  
-  html += `<div class="btn-row" style="margin-top:16px">
-    <button class="btn-close" onclick="closeTicket()">关闭</button>
-    <button class="btn-print" onclick="copyTicket()">📋 复制投注方案</button>
-  </div>`;
-  
-  document.getElementById('ticketContent').innerHTML = html;
-  document.getElementById('ticketModal').classList.remove('hidden');
-}
 
-function showParlay(k) {
-  const matches = window._qualifiedMatches || [];
-  if (matches.length < k) return;
-  
-  // 每场比赛取总进球推荐的组合
-  const combos = matches.filter(m => m.goalOK).slice(0, k);
-  if (combos.length < k) { showToast('总进球数推荐赛事不足，无法组成该过关'); return; }
-  
-  // 笛卡尔积
-  let totalCombos = 1, minOdds = Infinity, maxOdds = 0;
-  let minCombo = '', maxCombo = '';
-  
-  const allOptionLists = combos.map(m => m.strategy.goal.combo);
-  const total = allOptionLists.reduce((a,b) => a * b.length, 1);
-  
-  // 生成所有组合并计算
-  function* cartesian(arrays, prefix=[]) {
-    if (arrays.length === 0) { yield prefix; return; }
-    for (const item of arrays[0]) {
-      yield* cartesian(arrays.slice(1), [...prefix, item]);
-    }
+  function renderCombo(idx, c) {
+    var html = '<div class="combo-card">';
+    html += '  <div class="combo-top">';
+    html += '    <span class="combo-idx">#' + idx + '</span>';
+    html += '    <span class="badge ' + c.type.key + '">' + esc(c.type.name) + '</span>';
+    html += '  </div>';
+    html += renderLeg("A", c.a);
+    html += renderLeg("B", c.b);
+    html += '  <div class="combo-metrics">';
+    html += '    <div>长期赔率乘积：<b>' + c.product.toFixed(2) + '</b></div>';
+    html += '    <div>总注数：<b>' + c.bets + '</b> 倍数：<b>1</b></div>';
+    html += '    <div>总投入：<b>' + c.invest.toFixed(0) + ' 元</b></div>';
+    html += '    <div style="grid-column:1/-1">奖金区间：<b>最低 ' + c.minPrize.toFixed(2) + ' 元 ~ 最高 ' + c.maxPrize.toFixed(2) + ' 元</b></div>';
+    html += '  </div>';
+    html += '</div>';
+    return html;
   }
-  
-  for (const combo of cartesian(allOptionLists)) {
-    let prod = 1;
-    let detail = [];
-    combo.forEach((opt, i) => {
-      const m = combos[i];
-      const idx = parseInt(opt);
-      const odd = parseFloat(m.ttg && m.ttg[GOAL_KEYS[idx]] ? m.ttg[GOAL_KEYS[idx]] : '3.5');
-      prod *= odd;
-      detail.push(`${m.home} ${GOAL_LABELS[idx]}@${odd}`);
+
+  function renderLeg(tag, leg) {
+    var opts = leg.opts.map(function (o) { return o.label + "(" + o.odds.toFixed(2) + ")"; }).join(" + ");
+    var cls = leg.play === "goals" ? "goals" : "half";
+    return '<div class="leg ' + cls + '">'
+      + '<div class="t">' + tag + '. ' + esc(leg.matchNumStr) + ' ' + esc(leg.home) + ' vs ' + esc(leg.away) + '（' + esc(leg.league) + '）</div>'
+      + '<div class="p"><b>' + playName(leg.play) + '</b> · ' + esc(opts) + '</div>'
+      + '<div class="p">场均赔率 <b>' + leg.avg.toFixed(2) + '</b>（' + leg.count + ' 个选项）长期赔率 <b>' + leg.longOdds.toFixed(2) + '</b></div>'
+      + '</div>';
+  }
+
+  function buildCopyText() {
+    if (!LAST_COMBOS.length) return "";
+    var pct = Math.round(getThreshold() * 100);
+    var lines = [];
+    lines.push("========== 竞彩足球 2串1 方案 ==========");
+    lines.push("数据时间：" + (LAST_UPDATE || "未知"));
+    lines.push("筛选条件：筛选值 ≥ " + pct + "%");
+    lines.push("有效方案：" + LAST_COMBOS.length + " 个");
+    lines.push("");
+    for (var i = 0; i < LAST_COMBOS.length; i++) {
+      var c = LAST_COMBOS[i];
+      lines.push("【" + (i + 1) + "】" + c.type.name);
+      lines.push("A. " + c.a.matchNumStr + " " + c.a.home + " vs " + c.a.away + "（" + c.a.league + "）");
+      lines.push("   玩法：" + playName(c.a.play));
+      lines.push("   选项：" + c.a.opts.map(function (o) { return o.label + "(" + o.odds.toFixed(2) + ")"; }).join(" + "));
+      lines.push("   场均赔率：" + c.a.avg.toFixed(2) + "（" + c.a.count + " 个选项）长期赔率：" + c.a.longOdds.toFixed(2));
+      lines.push("B. " + c.b.matchNumStr + " " + c.b.home + " vs " + c.b.away + "（" + c.b.league + "）");
+      lines.push("   玩法：" + playName(c.b.play));
+      lines.push("   选项：" + c.b.opts.map(function (o) { return o.label + "(" + o.odds.toFixed(2) + ")"; }).join(" + "));
+      lines.push("   场均赔率：" + c.b.avg.toFixed(2) + "（" + c.b.count + " 个选项）长期赔率：" + c.b.longOdds.toFixed(2));
+      lines.push("长期赔率乘积：" + c.product.toFixed(2) + " | 注数：" + c.bets + " | 倍数：1 | 投入：" + c.invest.toFixed(0) + "元");
+      lines.push("奖金区间：最低 " + c.minPrize.toFixed(2) + " 元 ~ 最高 " + c.maxPrize.toFixed(2) + " 元");
+      lines.push("----------------------------------------");
+    }
+    return lines.join("\n");
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return fallbackCopy(text); });
+    }
+    return Promise.resolve(fallbackCopy(text));
+  }
+
+  function fallbackCopy(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  function toast(msg) {
+    var el = $("status");
+    el.className = "status ok";
+    el.textContent = msg;
+  }
+
+  $("btnGen").addEventListener("click", function () { generate(); });
+  $("btnRefresh").addEventListener("click", function () { loadData(); });
+  $("threshold").addEventListener("change", function () { generate(); });
+
+  $("btnCopy").addEventListener("click", function () {
+    var text = buildCopyText();
+    if (!text) { toast("暂无方案可复制"); return; }
+    copyText(text).then(function (ok) {
+      toast(ok ? "注单已复制到剪贴板，请到体彩App/网页按内容出票" : "复制失败，请长按手动复制");
     });
-    const ret = prod * 2;
-    if (ret < minOdds) { minOdds = ret; minCombo = detail.join(' × '); }
-    if (ret > maxOdds) { maxOdds = ret; maxCombo = detail.join(' × '); }
-  }
-  
-  const cost = total * 2;
-  let html = `<h3>⚡ ${k}串1 过关计算</h3>
-    <p style="font-size:12px;color:var(--sub);text-align:center;margin-bottom:12px">${combos.map(m=>m.home).join(' × ')}</p>
-    <div class="ticket">
-      <div class="t-title">总进球数 ${k}串1</div>`;
-  
-  combos.forEach(m => {
-    const opts = m.strategy.goal.combo.map(o => {
-      const idx = parseInt(o);
-      const odd = m.ttg && m.ttg[GOAL_KEYS[idx]] ? m.ttg[GOAL_KEYS[idx]] : '?';
-      return `${GOAL_LABELS[idx]}@${odd}`;
-    }).join(' / ');
-    html += `<div class="t-item"><span>${m.league} ${m.home}vs${m.away}</span><span class="opts">${opts}</span></div>`;
   });
-  
-  html += `<div class="t-item"><span>组合数</span><span>${total}注</span></div>
-    <div class="t-item"><span>最低返奖</span><span style="color:var(--red)">¥${minOdds.toFixed(0)}</span></div>
-    <div class="t-item"><span>最高返奖</span><span style="color:var(--green)">¥${maxOdds.toFixed(0)}</span></div>
-    <div class="t-total">投注金额: <strong>¥${cost}</strong></div>
-    <p style="font-size:10px;color:var(--sub);margin-top:4px">最差: ${minCombo}<br>最佳: ${maxCombo}</p></div>
-    <div class="btn-row" style="margin-top:12px">
-      <button class="btn-close" onclick="closeParlay()">关闭</button>
-    </div>`;
-  
-  document.getElementById('parlayContent').innerHTML = html;
-  document.getElementById('parlayModal').classList.remove('hidden');
-}
 
-function closeTicket() { document.getElementById('ticketModal').classList.add('hidden'); }
-function closeParlay() { document.getElementById('parlayModal').classList.add('hidden'); }
+  $("btnScrollTop").addEventListener("click", function () { window.scrollTo({ top: 0, behavior: "smooth" }); });
 
-function copyTicket() {
-  const matches = window._qualifiedMatches || [];
-  let text = '【AI智能投注方案】\n';
-  text += `日期: ${matches[0]?.date || '今日'}\n`;
-  text += '─'.repeat(30) + '\n';
-  
-  let total = 0;
-  matches.forEach(m => {
-    const s = m.strategy;
-    if (m.goalOK) {
-      total += s.goal.cost;
-      const opts = s.goal.combo.map(o => `${o}球`).join('/');
-      text += `${m.league} ${m.home}vs${m.away} 总进球:${opts} ¥${s.goal.cost}\n`;
-    }
-    if (m.halfOK) {
-      total += s.half.cost;
-      const opts = s.half.combo.join('/');
-      text += `${m.league} ${m.home}vs${m.away} 半全场:${opts} ¥${s.half.cost}\n`;
-    }
-  });
-  text += '─'.repeat(30) + '\n';
-  text += `合计: ¥${total}\n`;
-  text += '（AI基于8联赛215场历史数据生成）';
-  
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(() => showToast('✅ 已复制！可直接发送给体彩店'));
-  } else {
-    showToast('请截图保存投注方案');
-  }
-}
-
-document.getElementById('ticketModal').addEventListener('click', function(e) {
-  if (e.target === this) closeTicket();
-});
-document.getElementById('parlayModal').addEventListener('click', function(e) {
-  if (e.target === this) closeParlay();
-});
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.remove('hidden');
-  setTimeout(() => t.classList.add('hidden'), 2500);
-}
-
-// ========== 启动 ==========
-(async function() {
-  const data = await fetchMatches();
-  if (!data || !data.matches.length) {
-    document.getElementById('loadingView').classList.add('hidden');
-    document.getElementById('errorView').classList.remove('hidden');
-    return;
-  }
-  render(data);
+  // 启动
+  loadData();
 })();
 </script>
 </body>
