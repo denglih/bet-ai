@@ -126,6 +126,7 @@
   .leg .t { font-weight: 600; font-size: 14px; }
   .leg .p { font-size: 13px; color: var(--sub); margin-top: 2px; }
   .leg .p b { color: var(--ink); font-weight: 600; }
+  .leg .p .opt { color: #dc2626; font-weight: 700; }
   .combo-metrics {
     display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;
     margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line);
@@ -142,6 +143,19 @@
   .floating .btn { flex: 1; }
 
   .note { font-size: 12px; color: var(--sub); margin: 12px 0; }
+  .note-modal {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(0,0,0,.65);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; overflow: auto;
+  }
+  .note-modal-inner {
+    background: #fff; border-radius: 12px; padding: 12px;
+    max-width: 100%; max-height: 100%;
+    display: flex; flex-direction: column; gap: 10px; align-items: stretch;
+  }
+  .note-modal-head { font-size: 14px; color: var(--ink); text-align: center; }
+  .note-modal-inner img { width: 100%; height: auto; display: block; border-radius: 8px; }
   .hidden { display: none !important; }
 </style>
 </head>
@@ -157,6 +171,10 @@
       <label for="threshold">筛选值≥</label>
       <input id="threshold" type="number" min="0" max="200" step="1" value="20">
       <label for="threshold">%</label>
+    </div>
+    <div class="field">
+      <label for="multiplier">倍数</label>
+      <input id="multiplier" type="number" min="1" max="50" step="1" value="1">
     </div>
     <button class="btn" id="btnGen">生成方案</button>
     <button class="btn secondary" id="btnRefresh">刷新数据</button>
@@ -174,8 +192,16 @@
 </div>
 
 <div class="floating hidden" id="floatBar">
-  <button class="btn" id="btnCopy">复制文字注单</button>
+  <button class="btn" id="btnSave">保存注单图片</button>
   <button class="btn secondary" id="btnScrollTop">回顶部</button>
+</div>
+
+<div class="note-modal hidden" id="noteModal">
+  <div class="note-modal-inner">
+    <div class="note-modal-head">注单已生成 · 长按图片可保存到相册</div>
+    <img id="noteImg" alt="注单图片">
+    <button class="btn" id="btnCloseModal">关闭</button>
+  </div>
 </div>
 
 <script>
@@ -495,6 +521,7 @@
 
   function generate() {
     var threshold = getThreshold();
+    var multiplier = getMultiplier();
     var legs = [];
     for (var i = 0; i < MATCHES.length; i++) {
       var m = MATCHES[i];
@@ -511,11 +538,11 @@
         var A = legs[a], B = legs[b];
         var product = A.longOdds * B.longOdds;
         var bets = A.count * B.count;
-        var invest = bets * 2;
-        var prize = 2 * product;
+        var invest = bets * 2 * multiplier;
+        var prize = 2 * product * multiplier;
         var profit = prize / invest - 1;
-        var minPrize = 2 * A.min * B.min;
-        var maxPrize = 2 * A.max * B.max;
+        var minPrize = 2 * A.min * B.min * multiplier;
+        var maxPrize = 2 * A.max * B.max * multiplier;
         var type = typeOf(A, B);
         combos.push({
           a: A, b: B,
@@ -526,7 +553,8 @@
           prize: prize,
           profit: profit,
           minPrize: minPrize,
-          maxPrize: maxPrize
+          maxPrize: maxPrize,
+          multiplier: multiplier
         });
       }
     }
@@ -546,6 +574,13 @@
     if (!isFinite(v)) v = 20;
     if (v < 0) v = 0;
     return v / 100;
+  }
+
+  function getMultiplier() {
+    var v = parseInt($("multiplier").value, 10);
+    if (!isFinite(v) || v < 1) v = 1;
+    if (v > 50) v = 50;
+    return v;
   }
 
   function renderResults(combos, total, threshold) {
@@ -576,7 +611,7 @@
     html += renderLeg("B", c.b);
     html += '  <div class="combo-metrics">';
     html += '    <div>长期赔率乘积：<b>' + c.product.toFixed(2) + '</b></div>';
-    html += '    <div>总注数：<b>' + c.bets + '</b> 倍数：<b>1</b></div>';
+    html += '    <div>总注数：<b>' + c.bets + '</b> 倍数：<b>' + c.multiplier + '</b></div>';
     html += '    <div>总投入：<b>' + c.invest.toFixed(0) + ' 元</b></div>';
     html += '    <div style="grid-column:1/-1">奖金区间：<b>最低 ' + c.minPrize.toFixed(2) + ' 元 ~ 最高 ' + c.maxPrize.toFixed(2) + ' 元</b></div>';
     html += '  </div>';
@@ -589,57 +624,113 @@
     var cls = leg.play === "goals" ? "goals" : "half";
     return '<div class="leg ' + cls + '">'
       + '<div class="t">' + tag + '. ' + esc(leg.matchNumStr) + ' ' + esc(leg.home) + ' vs ' + esc(leg.away) + '（' + esc(leg.league) + '）</div>'
-      + '<div class="p"><b>' + playName(leg.play) + '</b> · ' + esc(opts) + '</div>'
+      + '<div class="p"><b>' + playName(leg.play) + '</b> · <span class="opt">' + esc(opts) + '</span></div>'
       + '<div class="p">场均赔率 <b>' + leg.avg.toFixed(2) + '</b>（' + leg.count + ' 个选项）长期赔率 <b>' + leg.longOdds.toFixed(2) + '</b></div>'
       + '</div>';
   }
 
-  function buildCopyText() {
-    if (!LAST_COMBOS.length) return "";
+  function saveNoteImage() {
+    if (!LAST_COMBOS.length) { toast("暂无方案可保存"); return; }
+
+    var scale = 2;
+    var W = 700, pad = 30, contentW = W - pad * 2, cx = pad;
+    var F_TITLE = "bold 34px sans-serif";
+    var F_HEAD  = "bold 28px sans-serif";
+    var F_BODY  = "25px sans-serif";
+    var F_BOLD  = "bold 25px sans-serif";
+    var F_SMALL = "21px sans-serif";
+
+    var tmp = document.createElement("canvas").getContext("2d");
+    var ops = [];
+
+    function splitWrap(text, font) {
+      tmp.font = font;
+      var lines = [], cur = "";
+      for (var i = 0; i < text.length; i++) {
+        var t = cur + text[i];
+        if (tmp.measureText(t).width > contentW && cur) { lines.push(cur); cur = text[i]; }
+        else cur = t;
+      }
+      if (cur) lines.push(cur);
+      return lines;
+    }
+
+    function wrap(text, color, font) {
+      var ls = splitWrap(text, font);
+      for (var i = 0; i < ls.length; i++) ops.push({ type: "line", text: ls[i], color: color, font: font });
+    }
+    function title(text) { ops.push({ type: "title", text: text, color: "#1a1d24", font: F_TITLE }); }
+    function divider() { ops.push({ type: "divider" }); }
+
+    function leg(tag, lg) {
+      wrap(tag + ". " + lg.matchNumStr + " " + lg.home + " vs " + lg.away + "（" + lg.league + "）", "#1a1d24", F_BOLD);
+      wrap("玩法：" + playName(lg.play), "#6b7280", F_BODY);
+      wrap("选项：" + lg.opts.map(function (o) { return o.label + "(" + o.odds.toFixed(2) + ")"; }).join(" + "), "#dc2626", F_BOLD);
+      wrap("场均赔率 " + lg.avg.toFixed(2) + "（" + lg.count + " 个选项）长期赔率 " + lg.longOdds.toFixed(2), "#6b7280", F_BODY);
+    }
+
     var pct = Math.round(getThreshold() * 100);
-    var lines = [];
-    lines.push("========== 竞彩足球 2串1 方案 ==========");
-    lines.push("数据时间：" + (LAST_UPDATE || "未知"));
-    lines.push("筛选条件：筛选值 ≥ " + pct + "%");
-    lines.push("有效方案：" + LAST_COMBOS.length + " 个");
-    lines.push("");
+    title("竞彩足球 2串1 注单");
+    wrap("数据时间：" + (LAST_UPDATE || "未知"), "#6b7280", F_SMALL);
+    wrap("筛选值 ≥ " + pct + "% · 倍数 " + LAST_COMBOS[0].multiplier + " · 有效方案 " + LAST_COMBOS.length + " 个", "#6b7280", F_SMALL);
+
     for (var i = 0; i < LAST_COMBOS.length; i++) {
       var c = LAST_COMBOS[i];
-      lines.push("【" + (i + 1) + "】" + c.type.name);
-      lines.push("A. " + c.a.matchNumStr + " " + c.a.home + " vs " + c.a.away + "（" + c.a.league + "）");
-      lines.push("   玩法：" + playName(c.a.play));
-      lines.push("   选项：" + c.a.opts.map(function (o) { return o.label + "(" + o.odds.toFixed(2) + ")"; }).join(" + "));
-      lines.push("   场均赔率：" + c.a.avg.toFixed(2) + "（" + c.a.count + " 个选项）长期赔率：" + c.a.longOdds.toFixed(2));
-      lines.push("B. " + c.b.matchNumStr + " " + c.b.home + " vs " + c.b.away + "（" + c.b.league + "）");
-      lines.push("   玩法：" + playName(c.b.play));
-      lines.push("   选项：" + c.b.opts.map(function (o) { return o.label + "(" + o.odds.toFixed(2) + ")"; }).join(" + "));
-      lines.push("   场均赔率：" + c.b.avg.toFixed(2) + "（" + c.b.count + " 个选项）长期赔率：" + c.b.longOdds.toFixed(2));
-      lines.push("长期赔率乘积：" + c.product.toFixed(2) + " | 注数：" + c.bets + " | 倍数：1 | 投入：" + c.invest.toFixed(0) + "元");
-      lines.push("奖金区间：最低 " + c.minPrize.toFixed(2) + " 元 ~ 最高 " + c.maxPrize.toFixed(2) + " 元");
-      lines.push("----------------------------------------");
+      divider();
+      wrap("【" + (i + 1) + "】" + c.type.name, "#0a84ff", F_HEAD);
+      leg("A", c.a);
+      leg("B", c.b);
+      wrap("长期赔率乘积 " + c.product.toFixed(2) + " ｜ 注数 " + c.bets + " ｜ 倍数 " + c.multiplier + " ｜ 投入 " + c.invest.toFixed(0) + " 元", "#1a1d24", F_BOLD);
+      wrap("奖金区间：最低 " + c.minPrize.toFixed(2) + " 元 ~ 最高 " + c.maxPrize.toFixed(2) + " 元", "#0a7d33", F_BOLD);
     }
-    return lines.join("\n");
+
+    // 布局：计算每项 y 坐标与总高度
+    var lh = 36, titleH = 52, dividerH = 22, y = pad;
+    for (var k = 0; k < ops.length; k++) {
+      var op = ops[k];
+      if (op.type === "title") { op.y = y + 30; y += titleH; }
+      else if (op.type === "divider") { op.y = y + 6; y += dividerH; }
+      else { op.y = y + 24; y += lh; }
+    }
+    var H = y + pad;
+
+    var canvas = document.createElement("canvas");
+    canvas.width = W * scale;
+    canvas.height = Math.ceil(H) * scale;
+    var ctx = canvas.getContext("2d");
+    ctx.scale(scale, scale);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, W, H);
+
+    for (var m = 0; m < ops.length; m++) {
+      var o = ops[m];
+      if (o.type === "title") {
+        ctx.fillStyle = o.color; ctx.font = o.font;
+        var tw = ctx.measureText(o.text).width;
+        ctx.fillText(o.text, (W - tw) / 2, o.y);
+      } else if (o.type === "divider") {
+        ctx.strokeStyle = "#e6e8ec"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(cx, o.y); ctx.lineTo(W - pad, o.y); ctx.stroke();
+      } else {
+        ctx.fillStyle = o.color; ctx.font = o.font;
+        ctx.fillText(o.text, cx, o.y);
+      }
+    }
+
+    showNoteImage(canvas);
   }
 
-  function copyText(text) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return fallbackCopy(text); });
-    }
-    return Promise.resolve(fallbackCopy(text));
-  }
+  function showNoteImage(canvas) {
+    var url = canvas.toDataURL("image/png");
+    $("noteImg").src = url;
+    $("noteModal").classList.remove("hidden");
 
-  function fallbackCopy(text) {
-    var ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    var ok = false;
-    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
-    document.body.removeChild(ta);
-    return ok;
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "竞彩2串1注单_" + (LAST_UPDATE || "").replace(/[^\d]/g, "") + ".png";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   function toast(msg) {
@@ -651,14 +742,10 @@
   $("btnGen").addEventListener("click", function () { generate(); });
   $("btnRefresh").addEventListener("click", function () { loadData(); });
   $("threshold").addEventListener("change", function () { generate(); });
+  $("multiplier").addEventListener("change", function () { generate(); });
 
-  $("btnCopy").addEventListener("click", function () {
-    var text = buildCopyText();
-    if (!text) { toast("暂无方案可复制"); return; }
-    copyText(text).then(function (ok) {
-      toast(ok ? "注单已复制到剪贴板，请到体彩App/网页按内容出票" : "复制失败，请长按手动复制");
-    });
-  });
+  $("btnSave").addEventListener("click", function () { saveNoteImage(); });
+  $("btnCloseModal").addEventListener("click", function () { $("noteModal").classList.add("hidden"); });
 
   $("btnScrollTop").addEventListener("click", function () { window.scrollTo({ top: 0, behavior: "smooth" }); });
 
