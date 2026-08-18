@@ -310,7 +310,7 @@
   }
 
   function teamName(short, full) {
-    return full || short || "";
+    return short || full || "";
   }
 
   function setStatus(cls, msg) {
@@ -670,9 +670,11 @@
     }
 
     var pct = Math.round(getThreshold() * 100);
+    var totalAmount = 0;
+    for (var t = 0; t < LAST_COMBOS.length; t++) totalAmount += LAST_COMBOS[t].invest;
     title("竞彩足球 2串1 注单");
     wrap("数据时间：" + (LAST_UPDATE || "未知"), "#6b7280", F_SMALL);
-    wrap("筛选值 ≥ " + pct + "% · 倍数 " + LAST_COMBOS[0].multiplier + " · 有效方案 " + LAST_COMBOS.length + " 个", "#6b7280", F_SMALL);
+    wrap("筛选值≥" + pct + "% · 倍数" + LAST_COMBOS[0].multiplier + " · 有效方案" + LAST_COMBOS.length + "个 · 总金额" + totalAmount.toFixed(0), "#6b7280", F_SMALL);
 
     for (var i = 0; i < LAST_COMBOS.length; i++) {
       var c = LAST_COMBOS[i];
