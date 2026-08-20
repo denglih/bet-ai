@@ -188,7 +188,7 @@
   <div class="section-title">生成结果 <span class="cnt" id="resultCnt"></span></div>
   <div id="results"></div>
 
-  <p class="note">说明：长期赔率乘积 = 两场“长期赔率”（历史文档预设场均赔率）相乘；总投入 = 总注数 × 2元。仅展示当日赛事（今日11:00至次日11:00开赛）。仅用于投注方案整理，不构成任何购彩建议。</p>
+  <p class="note">说明：综合评分 = 两场命中率乘积（概率乘积，满分为100分，低于40分自动过滤）；总投入 = 总注数 × 2元。仅展示当日赛事（今日11:00至次日11:00开赛）。仅用于投注方案整理，不构成任何购彩建议。</p>
 </div>
 
 <div class="floating hidden" id="floatBar">
@@ -199,7 +199,7 @@
 <div class="note-modal hidden" id="noteModal">
   <div class="note-modal-inner">
     <div class="note-modal-head">注单已生成 · 长按图片可保存到相册</div>
-    <img id="noteImg" alt="注单图片">
+    <div id="noteImgBox"></div>
     <button class="btn" id="btnCloseModal">关闭</button>
   </div>
 </div>
@@ -217,60 +217,83 @@
   // ---------- 文档预设选择项（联赛短名 → 选项） ----------
   // ====AUTO:PRESET:START====
   var PRESET = {
-    "挪超":   { goals: [],                    half: ["胜胜","负负"] },
-    "芬超":   { goals: [],                    half: ["胜胜","平胜","负负"] },
-    "瑞超":   { goals: ["0球","2球","3球","4球"], half: ["胜胜","平平","平负","负负"] },
-    "葡超":   { goals: ["1球","2球","4球"],      half: [] },
-    "西甲":   { goals: ["2球","3球","4球"],      half: ["平胜","胜平","平平"] },
-    "荷甲":   { goals: ["3球","4球","5球"],      half: ["胜胜","平胜","负负"] },
-    "荷乙":   { goals: ["1球","3球","4球","5球"], half: ["胜胜","平胜","负平","胜负"] },
-    "法乙":   { goals: ["1球","2球","4球","6球"], half: ["胜胜","平平","平负","负负"] },
-    "英联赛杯": { goals: ["1球","2球","4球"],      half: ["胜胜","平胜","平平","负负"] },
-    "英社区盾": { goals: ["3球"],                half: ["胜胜"] },
-    "德乙":   { goals: [],                    half: ["胜胜","平平","负平","负负"] },
-    "欧冠":   { goals: [],                    half: ["胜胜","平胜","平平","平负","负负"] },
-    "欧罗巴":  { goals: ["2球","3球","5球"],      half: ["胜胜","平胜","胜平","平负"] },
-    "英冠":   { goals: ["0球","2球","3球","4球"], half: ["胜胜","平平","负平","平负"] },
-    "巴甲":   { goals: ["0球","2球"],           half: ["胜胜","胜平","平平"] },
-    "巴西杯":  { goals: ["2球","4球"],           half: ["胜胜","胜平","平平"] },
-    "解放者杯": { goals: ["1球","2球","3球"],      half: ["胜胜","平胜","胜平","平平","平负"] },
-    "美职":   { goals: ["0球","2球","5球"],      half: ["平胜","平平","负平"] },
-    "韩职":   { goals: ["0球","3球","4球","5球"], half: ["胜胜","平平","负负"] },
-    "日职":   { goals: ["3球","4球","5球"],      half: ["胜胜","平平","胜负"] },
-    "日乙":   { goals: ["0球","1球","2球","4球"], half: ["胜胜","负负","平平"] },
-    "亚冠精英": { goals: ["0球","1球","2球","3球"], half: ["胜胜","平胜","负胜","平平","负负"] },
-    "沙职":   { goals: [],                    half: ["胜胜","胜平","平胜","平负"] },
+    "挪超":   { goals: ["2球","3球","4球"], half: ["胜胜","平平","负负"] },
+    "芬超":   { goals: ["2球","3球","4球"], half: ["胜胜","平胜","负负"] },
+    "瑞超":   { goals: ["2球","3球","4球"], half: ["胜胜","平平","负负"] },
+    "葡超":   { goals: ["2球","3球","4球"], half: ["胜胜","平平","负负"] },
+    "西甲":   { goals: ["1球","2球","3球"], half: ["胜胜","平胜","负负"] },
+    "荷甲":   { goals: ["2球","3球","4球"], half: ["胜胜","平平","负负"] },
+    "荷乙":   { goals: ["2球","3球","4球"], half: ["胜胜","平平","负负"] },
+    "法乙":   { goals: ["2球","3球","4球"], half: ["胜胜","平平","负负"] },
+    "德乙":   { goals: ["1球","2球","3球"], half: ["胜胜","平平","负负"] },
+    "欧冠":   { goals: ["1球","2球","3球"], half: ["胜胜","平胜","负负"] },
+    "英冠":   { goals: ["1球","2球","3球"], half: ["胜胜","平平","负负"] },
+    "巴甲":   { goals: ["2球","3球","4球"], half: ["胜胜","平平","负负"] },
+    "美职":   { goals: ["2球","3球","4球"], half: ["胜胜","平胜","负负"] },
+    "韩职":   { goals: ["1球","2球","3球"], half: ["胜胜","平平","负负"] },
+    "日职":   { goals: ["2球","3球","4球"], half: ["胜胜","平平","负负"] },
+    "日乙":   { goals: ["1球","2球","4球"], half: ["胜胜","负负","平平"] },
+    "沙职":   { goals: ["2球","3球","4球"], half: ["胜胜","平胜","负负"] },
+    "欧罗巴":  { goals: ["1球","2球","3球"], half: ["胜胜","平胜","负负"] },
+    "英联赛杯": { goals: ["2球","3球","4球"], half: ["胜胜","平平","负负"] },
+    "解放者杯": { goals: ["1球","2球","3球"], half: ["胜胜","平胜","平平"] },
+    "亚冠精英": { goals: ["1球","2球","3球"], half: ["胜胜","平胜","平平"] },
   };
   // ====AUTO:PRESET:END====
 
   // ---------- 文档长期赔率（联赛短名 → 各玩法历史场均赔率） ----------
   // ====AUTO:LONG_ODDS:START====
   var LONG_ODDS = {
-    "挪超":   { goals: 0.00, half: 3.25 },
-    "芬超":   { goals: 0.00, half: 4.22 },
-    "瑞超":   { goals: 3.91, half: 4.66 },
-    "葡超":   { goals: 3.89, half: 0.00 },
-    "西甲":   { goals: 4.00, half: 5.55 },
-    "荷甲":   { goals: 5.04, half: 4.16 },
-    "荷乙":   { goals: 4.18, half: 4.28 },
-    "法乙":   { goals: 4.16, half: 3.88 },
-    "英联赛杯": { goals: 4.74, half: 3.59 },
-    "英社区盾": { goals: 3.90, half: 4.60 },
-    "德乙":   { goals: 0.00, half: 4.41 },
-    "欧冠":   { goals: 0.00, half: 4.63 },
-    "欧罗巴":  { goals: 3.76, half: 4.61 },
-    "英冠":   { goals: 4.35, half: 5.00 },
-    "巴甲":   { goals: 3.31, half: 3.62 },
-    "巴西杯":  { goals: 3.18, half: 4.01 },
-    "解放者杯": { goals: 3.44, half: 6.71 },
-    "美职":   { goals: 4.04, half: 5.22 },
-    "韩职":   { goals: 4.13, half: 4.99 },
-    "日职":   { goals: 3.66, half: 4.22 },
-    "日乙":   { goals: 4.08, half: 3.93 },
-    "亚冠精英": { goals: 3.12, half: 6.70 },
-    "沙职":   { goals: 0.00, half: 3.47 },
+    "挪超":   { goals: 3.78, half: 3.32 },
+    "芬超":   { goals: 3.84, half: 3.30 },
+    "瑞超":   { goals: 3.69, half: 3.69 },
+    "葡超":   { goals: 3.51, half: 2.95 },
+    "西甲":   { goals: 3.58, half: 3.52 },
+    "荷甲":   { goals: 3.91, half: 3.51 },
+    "荷乙":   { goals: 3.75, half: 3.38 },
+    "法乙":   { goals: 3.40, half: 3.92 },
+    "德乙":   { goals: 3.73, half: 3.79 },
+    "欧冠":   { goals: 3.74, half: 3.19 },
+    "英冠":   { goals: 3.45, half: 4.14 },
+    "巴甲":   { goals: 3.38, half: 3.81 },
+    "美职":   { goals: 3.75, half: 3.43 },
+    "韩职":   { goals: 3.55, half: 4.47 },
+    "日职":   { goals: 3.66, half: 3.79 },
+    "日乙":   { goals: 4.08, half: 3.83 },
+    "沙职":   { goals: 3.83, half: 2.38 },
+    "欧罗巴":  { goals: 3.61, half: 3.50 },
+    "英联赛杯": { goals: 3.56, half: 3.29 },
+    "解放者杯": { goals: 3.15, half: 4.13 },
+    "亚冠精英": { goals: 3.77, half: 3.94 },
   };
   // ====AUTO:LONG_ODDS:END====
+
+  // ---------- 文档命中率（联赛短名 → 各玩法所选选项历史命中率，概率 0~1） ----------
+  // ====AUTO:HIT_RATE:START====
+  var HIT_RATE = {
+    "挪超":   { goals: 0.578, half: 0.659 },
+    "芬超":   { goals: 0.604, half: 0.613 },
+    "瑞超":   { goals: 0.645, half: 0.590 },
+    "葡超":   { goals: 0.662, half: 0.641 },
+    "西甲":   { goals: 0.703, half: 0.589 },
+    "荷甲":   { goals: 0.647, half: 0.667 },
+    "荷乙":   { goals: 0.596, half: 0.626 },
+    "法乙":   { goals: 0.596, half: 0.632 },
+    "德乙":   { goals: 0.673, half: 0.552 },
+    "欧冠":   { goals: 0.555, half: 0.611 },
+    "英冠":   { goals: 0.669, half: 0.564 },
+    "巴甲":   { goals: 0.769, half: 0.513 },
+    "美职":   { goals: 0.602, half: 0.615 },
+    "韩职":   { goals: 0.637, half: 0.544 },
+    "日职":   { goals: 0.667, half: 0.778 },
+    "日乙":   { goals: 0.750, half: 0.750 },
+    "沙职":   { goals: 0.634, half: 0.621 },
+    "欧罗巴":  { goals: 0.663, half: 0.638 },
+    "英联赛杯": { goals: 0.710, half: 0.645 },
+    "解放者杯": { goals: 0.783, half: 0.630 },
+    "亚冠精英": { goals: 0.595, half: 0.568 },
+  };
+  // ====AUTO:HIT_RATE:END====
 
   var API_URL = "https://webapi.sporttery.cn/gateway/jc/football/getMatchCalculatorV1.qry?poolCode=ttg,hafu&channel=c";
 
@@ -503,6 +526,12 @@
       var v = play === "goals" ? lo.goals : lo.half;
       if (v > 0) longOdds = v;
     }
+    var hitRate = 0;
+    var hr = HIT_RATE[m.leagueAbbName];
+    if (hr) {
+      var hv = play === "goals" ? hr.goals : hr.half;
+      if (hv > 0) hitRate = hv;
+    }
     return {
       matchId: m.matchId,
       matchNumStr: m.matchNumStr,
@@ -513,6 +542,7 @@
       opts: opts,
       avg: avg,
       longOdds: longOdds,
+      hitRate: hitRate,
       count: opts.length,
       min: min,
       max: max
@@ -543,11 +573,14 @@
         var profit = prize / invest - 1;
         var minPrize = 2 * A.min * B.min * multiplier;
         var maxPrize = 2 * A.max * B.max * multiplier;
+        var prob = A.hitRate * B.hitRate;
+        var score = prob * 100;
         var type = typeOf(A, B);
         combos.push({
           a: A, b: B,
           type: type,
           product: product,
+          score: score,
           bets: bets,
           invest: invest,
           prize: prize,
@@ -559,10 +592,10 @@
       }
     }
 
-    var filtered = combos.filter(function (c) { return c.profit >= threshold; });
+    var filtered = combos.filter(function (c) { return c.profit >= threshold && c.score >= 40; });
     filtered.sort(function (x, y) {
-      if (y.product !== x.product) return y.product - x.product;
-      return y.profit - x.profit;
+      if (y.score !== x.score) return y.score - x.score;
+      return y.product - x.product;
     });
 
     LAST_COMBOS = filtered;
@@ -601,18 +634,24 @@
     $("floatBar").classList.remove("hidden");
   }
 
+  function fmtScore(v) {
+    var n = Math.round(v * 10) / 10;
+    return (n % 1 === 0) ? String(n) : n.toFixed(1);
+  }
+
   function renderCombo(idx, c) {
     var html = '<div class="combo-card">';
     html += '  <div class="combo-top">';
     html += '    <span class="combo-idx">#' + idx + '</span>';
     html += '    <span class="badge ' + c.type.key + '">' + esc(c.type.name) + '</span>';
+    html += '    <span class="badge profit">综合评分 ' + fmtScore(c.score) + '分</span>';
     html += '  </div>';
     html += renderLeg("A", c.a);
     html += renderLeg("B", c.b);
     html += '  <div class="combo-metrics">';
-    html += '    <div>长期赔率乘积：<b>' + c.product.toFixed(2) + '</b></div>';
-    html += '    <div>总注数：<b>' + c.bets + '</b> 倍数：<b>' + c.multiplier + '</b></div>';
-    html += '    <div>总投入：<b>' + c.invest.toFixed(0) + ' 元</b></div>';
+    html += '    <div>过关方式：<b>2串1</b></div>';
+    html += '    <div>注数×倍数：<b>' + c.bets + '×' + c.multiplier + '</b></div>';
+    html += '    <div>合计：<b>' + c.invest.toFixed(0) + ' 元</b></div>';
     html += '    <div style="grid-column:1/-1">奖金区间：<b>最低 ' + c.minPrize.toFixed(2) + ' 元 ~ 最高 ' + c.maxPrize.toFixed(2) + ' 元</b></div>';
     html += '  </div>';
     html += '</div>';
@@ -625,7 +664,6 @@
     return '<div class="leg ' + cls + '">'
       + '<div class="t">' + tag + '. ' + esc(leg.matchNumStr) + ' ' + esc(leg.home) + ' vs ' + esc(leg.away) + '（' + esc(leg.league) + '）</div>'
       + '<div class="p"><b>' + playName(leg.play) + '</b> · <span class="opt">' + esc(opts) + '</span></div>'
-      + '<div class="p">场均赔率 <b>' + leg.avg.toFixed(2) + '</b>（' + leg.count + ' 个选项）长期赔率 <b>' + leg.longOdds.toFixed(2) + '</b></div>'
       + '</div>';
   }
 
@@ -639,6 +677,11 @@
     var F_BODY  = "25px sans-serif";
     var F_BOLD  = "bold 25px sans-serif";
     var F_SMALL = "21px sans-serif";
+
+    var lh = 36, titleH = 52, dividerH = 22;
+    // 单页像素面积上限约 16M，避免超出部分浏览器（尤其 iOS/微信）超大 canvas 限制导致图片空白
+    var MAX_AREA = 16777216;
+    var MAX_H = Math.max(2000, Math.floor(MAX_AREA / (W * scale * scale)) - 120);
 
     var tmp = document.createElement("canvas").getContext("2d");
     var ops = [];
@@ -666,73 +709,153 @@
       wrap(tag + ". " + lg.matchNumStr + " " + lg.home + " vs " + lg.away + "（" + lg.league + "）", "#1a1d24", F_BOLD);
       wrap("玩法：" + playName(lg.play), "#6b7280", F_BODY);
       wrap("选项：" + lg.opts.map(function (o) { return o.label + "(" + o.odds.toFixed(2) + ")"; }).join(" + "), "#dc2626", F_BOLD);
-      wrap("场均赔率 " + lg.avg.toFixed(2) + "（" + lg.count + " 个选项）长期赔率 " + lg.longOdds.toFixed(2), "#6b7280", F_BODY);
     }
 
-    var pct = Math.round(getThreshold() * 100);
-    var totalAmount = 0;
-    for (var t = 0; t < LAST_COMBOS.length; t++) totalAmount += LAST_COMBOS[t].invest;
-    title("竞彩足球 2串1 注单");
-    wrap("数据时间：" + (LAST_UPDATE || "未知"), "#6b7280", F_SMALL);
-    wrap("筛选值≥" + pct + "% · 倍数" + LAST_COMBOS[0].multiplier + " · 有效方案" + LAST_COMBOS.length + "个 · 总金额" + totalAmount.toFixed(0), "#6b7280", F_SMALL);
-
-    for (var i = 0; i < LAST_COMBOS.length; i++) {
-      var c = LAST_COMBOS[i];
+    function comboOps(c, idx) {
       divider();
-      wrap("【" + (i + 1) + "】" + c.type.name, "#0a84ff", F_HEAD);
+      wrap("【" + idx + "】" + c.type.name + "  综合评分：" + fmtScore(c.score) + "分", "#0a84ff", F_HEAD);
+      wrap("过关方式 2×1  注数×倍数 " + c.bets + "×" + c.multiplier + "  合计 " + c.invest.toFixed(0) + "元", "#1a1d24", F_BOLD);
       leg("A", c.a);
       leg("B", c.b);
-      wrap("长期赔率乘积 " + c.product.toFixed(2) + " ｜ 注数 " + c.bets + " ｜ 倍数 " + c.multiplier + " ｜ 投入 " + c.invest.toFixed(0) + " 元", "#1a1d24", F_BOLD);
       wrap("奖金区间：最低 " + c.minPrize.toFixed(2) + " 元 ~ 最高 " + c.maxPrize.toFixed(2) + " 元", "#0a7d33", F_BOLD);
     }
 
-    // 布局：计算每项 y 坐标与总高度
-    var lh = 36, titleH = 52, dividerH = 22, y = pad;
-    for (var k = 0; k < ops.length; k++) {
-      var op = ops[k];
-      if (op.type === "title") { op.y = y + 30; y += titleH; }
-      else if (op.type === "divider") { op.y = y + 6; y += dividerH; }
-      else { op.y = y + 24; y += lh; }
+    function headerOps(pageNo, pageTotal) {
+      var pct = Math.round(getThreshold() * 100);
+      var totalAmount = 0;
+      for (var t = 0; t < LAST_COMBOS.length; t++) totalAmount += LAST_COMBOS[t].invest;
+      title("竞彩足球 2串1 注单");
+      wrap("数据时间：" + (LAST_UPDATE || "未知"), "#6b7280", F_SMALL);
+      wrap("筛选值≥" + pct + "% · 倍数" + LAST_COMBOS[0].multiplier + " · 有效方案" + LAST_COMBOS.length + "个 · 总金额" + totalAmount.toFixed(0), "#6b7280", F_SMALL);
+      if (pageTotal > 1) wrap("（第 " + pageNo + " / " + pageTotal + " 页）", "#6b7280", F_SMALL);
     }
-    var H = y + pad;
+    function footerOps() {
+      divider();
+      wrap("温馨提示：理性购彩，娱乐为主，仅供参考。", "#6b7280", F_SMALL);
+    }
 
-    var canvas = document.createElement("canvas");
-    canvas.width = W * scale;
-    canvas.height = Math.ceil(H) * scale;
-    var ctx = canvas.getContext("2d");
-    ctx.scale(scale, scale);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, W, H);
-
-    for (var m = 0; m < ops.length; m++) {
-      var o = ops[m];
-      if (o.type === "title") {
-        ctx.fillStyle = o.color; ctx.font = o.font;
-        var tw = ctx.measureText(o.text).width;
-        ctx.fillText(o.text, (W - tw) / 2, o.y);
-      } else if (o.type === "divider") {
-        ctx.strokeStyle = "#e6e8ec"; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(cx, o.y); ctx.lineTo(W - pad, o.y); ctx.stroke();
-      } else {
-        ctx.fillStyle = o.color; ctx.font = o.font;
-        ctx.fillText(o.text, cx, o.y);
+    function layoutHeight(arr) {
+      var y = pad;
+      for (var k = 0; k < arr.length; k++) {
+        var op = arr[k];
+        if (op.type === "title") y += titleH;
+        else if (op.type === "divider") y += dividerH;
+        else y += lh;
       }
+      return y + pad;
     }
 
-    showNoteImage(canvas);
+    function renderCanvas(arr) {
+      var y = pad;
+      for (var k = 0; k < arr.length; k++) {
+        var op = arr[k];
+        if (op.type === "title") { op.y = y + 30; y += titleH; }
+        else if (op.type === "divider") { op.y = y + 6; y += dividerH; }
+        else { op.y = y + 24; y += lh; }
+      }
+      var H = y + pad;
+      var canvas = document.createElement("canvas");
+      canvas.width = W * scale;
+      canvas.height = Math.ceil(H) * scale;
+      var ctx = canvas.getContext("2d");
+      ctx.scale(scale, scale);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, W, H);
+      for (var m = 0; m < arr.length; m++) {
+        var o = arr[m];
+        if (o.type === "title") {
+          ctx.fillStyle = o.color; ctx.font = o.font;
+          var tw = ctx.measureText(o.text).width;
+          ctx.fillText(o.text, (W - tw) / 2, o.y);
+        } else if (o.type === "divider") {
+          ctx.strokeStyle = "#e6e8ec"; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(cx, o.y); ctx.lineTo(W - pad, o.y); ctx.stroke();
+        } else {
+          ctx.fillStyle = o.color; ctx.font = o.font;
+          ctx.fillText(o.text, cx, o.y);
+        }
+      }
+      return canvas;
+    }
+
+    // 先构建每个组合的独立 op 块
+    var blocks = [];
+    for (var i = 0; i < LAST_COMBOS.length; i++) {
+      ops = [];
+      comboOps(LAST_COMBOS[i], i + 1);
+      blocks.push({ ops: ops, h: layoutHeight(ops) });
+    }
+    ops = [];
+
+    // 页头/页脚高度
+    ops = [];
+    headerOps(1, 1);
+    var headerH = layoutHeight(ops);
+    ops = [];
+    footerOps();
+    var footerH = layoutHeight(ops);
+    ops = [];
+
+    // 贪心分页
+    var pageIndexes = [];
+    var cur = [];
+    var curH = headerH + footerH;
+    for (var b = 0; b < blocks.length; b++) {
+      if (cur.length && curH + blocks[b].h > MAX_H) {
+        pageIndexes.push(cur);
+        cur = [];
+        curH = headerH + footerH;
+      }
+      cur.push(b);
+      curH += blocks[b].h;
+    }
+    if (cur.length) pageIndexes.push(cur);
+
+    // 逐页渲染
+    var canvases = [];
+    for (var p = 0; p < pageIndexes.length; p++) {
+      ops = [];
+      headerOps(p + 1, pageIndexes.length);
+      for (var q = 0; q < pageIndexes[p].length; q++) {
+        var bi = pageIndexes[p][q];
+        for (var r = 0; r < blocks[bi].ops.length; r++) ops.push(blocks[bi].ops[r]);
+      }
+      footerOps();
+      canvases.push(renderCanvas(ops));
+    }
+    ops = [];
+
+    showNoteImages(canvases);
   }
 
-  function showNoteImage(canvas) {
-    var url = canvas.toDataURL("image/png");
-    $("noteImg").src = url;
+  function showNoteImages(canvases) {
+    var box = $("noteImgBox");
+    box.innerHTML = "";
+    var firstUrl = "";
+    for (var i = 0; i < canvases.length; i++) {
+      var url = canvases[i].toDataURL("image/png");
+      if (i === 0) firstUrl = url;
+      var img = document.createElement("img");
+      img.src = url;
+      img.alt = "注单图片 第 " + (i + 1) + " 页";
+      box.appendChild(img);
+    }
+    var head = $("noteModal").querySelector(".note-modal-head");
+    if (head) {
+      head.textContent = canvases.length > 1
+        ? "注单已生成 · 共 " + canvases.length + " 页 · 长按图片逐张保存"
+        : "注单已生成 · 长按图片可保存到相册";
+    }
     $("noteModal").classList.remove("hidden");
 
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = "竞彩2串1注单_" + (LAST_UPDATE || "").replace(/[^\d]/g, "") + ".png";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    if (firstUrl) {
+      var a = document.createElement("a");
+      a.href = firstUrl;
+      a.download = "竞彩2串1注单_" + (LAST_UPDATE || "").replace(/[^\d]/g, "") + ".png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
   }
 
   function toast(msg) {
